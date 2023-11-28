@@ -32,6 +32,8 @@ class tournament_schedule(db.Model):
 
     def __repr__(self):
         return '<Team %r>' % self.team_id
+
+#create
 @app.route('/', methods = ['POST', 'GET'])
 
 def index():
@@ -51,6 +53,18 @@ def index():
     else:
         get_teams = tournament_schedule.query.order_by(tournament_schedule.start_date).all()
         return render_template('index.html', get_teams = get_teams)
+#delete
+
+@app.route('/delete/<int:team_id>')
+def delete(team_id):
+    team_to_delete = tournament_schedule.query.get_or_404(team_id)
+
+    try:
+        db.session.delete(team_to_delete)
+        db.session.commit()
+        return redirect('/')
+    except:
+        return 'There was a problem deleting this team'
 
 if __name__ == "__main__":
     app.run(debug = True)
