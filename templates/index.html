@@ -5,5 +5,50 @@
 {% endblock %}
 
 {% block body %}
-<h1>Tournament Scheduler</h1>
+<div class="heading">
+    <h1>Tournament Scheduler</h1>
+</div>
+
+<div class = "content">
+        
+    <div class = "entry">
+
+
+        <form action = "/" method = "POST">
+
+        <label>Name of the Tournament :</label><input type="text" name = "tournament_name" id = "tournament_name"><br/>
+        <label>Number of teams :</label><input type="number" name = "team_number" id = "team_number"> <br/>
+        <label>Start Date :</label><input type="date" name = "start_date" id = "start_date"> <br/>
+        <label>End Date :</label><input type="date" name = "end_date" id = "end_date"> <br/>
+
+        </form>
+
+        <form action = "/" method = "POST">
+
+            <input type="text" name = "team_name" id = "team_name" placeholder="Enter the name of the team to add">
+            <button type="submit" value="Add">Add Teams</button>
+    
+        </form>
+    </div>
+
+    <div class = "result">
+        <table>
+            <tr>
+                <th>Team ID</th>
+                <th>Teams Added</th>
+                <th>Action</th>
+            </tr>
+            {% for team in get_teams%}
+                <tr>
+                    <td> {{ team.team_id}} </td>
+                    <td> {{ team.team_name}} </td>
+                    <td>
+                        <a href="">Delete</a><br/>
+                        <a href="">Update</a><br/>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
 {% endblock %}
