@@ -32,6 +32,13 @@
     </div>
 
     <div class = "result">
+        <table style="border: 0px;">
+            <tr>
+                <th>Name of the Tournament</th>
+                <th>Number of Teams</th>
+                <
+            </tr>
+        </table>
         <table>
             <tr>
                 <th>Team ID</th>
@@ -44,7 +51,7 @@
                     <td> {{ team.team_name}} </td>
                     <td>
                         <a href="/delete/{{team.team_id}}">Delete</a><br/>
-                        <a href="">Update</a><br/>
+                        <a href="/update/{{team.team_id}}">Update</a><br/>
                     </td>
                 </tr>
             {% endfor %}

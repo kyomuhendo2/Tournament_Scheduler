@@ -4,6 +4,7 @@ from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_migrate import Migrate
+import pdb; pdb.set_trace()
 
 app = Flask(__name__)
 
@@ -28,7 +29,8 @@ class tournament_schedule(db.Model):
     number_of_teams = db.Column(db.Integer, nullable = False)
     team_id = db.Column(db.Integer, primary_key = True)
     team_name = db.Column(db.String(200), nullable = False)
-    start_date = db.Column(db.DateTime, default = datetime.utcnow)
+    start_date = db.Column(db.DateTime, default = datetime)
+    end_date = db.Column(db.DateTime, default = datetime)
 
     def __repr__(self):
         return '<Team %r>' % self.team_id
@@ -53,8 +55,8 @@ def index():
     else:
         get_teams = tournament_schedule.query.order_by(tournament_schedule.start_date).all()
         return render_template('index.html', get_teams = get_teams)
+    
 #delete
-
 @app.route('/delete/<int:team_id>')
 def delete(team_id):
     team_to_delete = tournament_schedule.query.get_or_404(team_id)
@@ -63,8 +65,28 @@ def delete(team_id):
         db.session.delete(team_to_delete)
         db.session.commit()
         return redirect('/')
-    except:
-        return 'There was a problem deleting this team'
+    except Exception as e:
+         # Print or log the error for debugging purposes
+        print(f"Error: {e}")
+        return f'OOPs! There was an issue updating your task {e}'
+
+#update
+@app.route('/update/<int:team_id>', methods = ['GET', 'POST'])
+
+def update(team_id):
+    update_team = tournament_schedule.query.get_or_404(team_id)
+    if request.method == 'POST':
+        print(f"Received form data: {request.form}")
+        update_team.team_name = request.form['team_name']
+
+        try:
+            db.session.commit()
+            print(f"Team updated successfully: {update_team}")
+            return redirect('/')
+        except:
+            return 'There was an issue updating your task'
+    else:
+        return render_template('update.html', update_team=update_team)
 
 if __name__ == "__main__":
     app.run(debug = True)
