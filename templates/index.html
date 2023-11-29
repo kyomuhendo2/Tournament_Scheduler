@@ -14,44 +14,79 @@
     <div class = "entry">
 
 
-        <form action = "/" method = "POST">
+        <form action="{{url_for('process_form1')}}" method = "POST">
 
-        <label>Name of the Tournament :</label><input type="text" name = "tournament_name" id = "tournament_name"><br/>
-        <label>Number of teams :</label><input type="number" name = "team_number" id = "team_number"> <br/>
-        <label>Start Date :</label><input type="date" name = "start_date" id = "start_date"> <br/>
-        <label>End Date :</label><input type="date" name = "end_date" id = "end_date"> <br/>
-
+            <label>Name of the Tournament :</label><input type="text" name ="tournament_name" id = "tournament_name"><br/>
+            <label>Number of teams :</label><input type="number" name = "number_of_teams" id = "number_of_teams"> <br/>
+            <label>Start Date :</label><input type="date" name = "start_date" id = "start_date"> <br/>
+            <label>End Date :</label><input type="date" name = "end_date" id = "end_date"> <br/>
+            <button type="submit" value="Add">Create Tournament</button>
         </form>
 
-        <form action = "/" method = "POST">
+        <form action="{{url_for('process_form2')}}" method = "POST">
 
             <input type="text" name = "team_name" id = "team_name" placeholder="Enter the name of the team to add">
             <button type="submit" value="Add">Add Teams</button>
-    
+            <label for="tournament_id">Select Tournament:</label>
+            <select name="tournament_id" required>
+            {% for tournament in get_tournament %}
+                <option style="width: 300px; height: 50px;" value="{{ tournament.id }}">{{ tournament.tournament_name }}</option>
+            {% endfor %}
+            </select>
+            <!--{% if get_tournament %}
+                <p>Number of tournaments: {{ get_tournament|length }}</p>
+            {% for tournament in get_tournament %}
+                <p>Tournament: {{ tournament.tournament_name }}</p>
+            {% endfor %}
+            {% else %}
+                <p>No tournaments available</p>
+            {% endif %}-->
         </form>
     </div>
 
     <div class = "result">
-        <table style="border: 0px;">
+        <form>
+            <button>Create Schedule</button>
+        </form>
+        <!--Tournament Table-->
+        <table style="border: 1px solid black; margin-bottom: 30px;">
             <tr>
+                <th>Tournament ID</th>
                 <th>Name of the Tournament</th>
                 <th>Number of Teams</th>
-                <
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Action</th>
             </tr>
+            {% for tournament in get_tournament %}
+                <tr>
+                    <td>{{ tournament.id }}</td>
+                    <td>{{ tournament.tournament_name }}</td>
+                    <td>{{ tournament.number_of_teams }}</td>
+                    <td>{{ tournament.start_date }}</td>
+                    <td>{{ tournament.end_date }}</td>
+                    <td>
+                        <a href="/delete_tournament/{{ tournament.id }}">Delete</a><br/>
+                        <a href="/update_tournament/{{ tournament.id }}">Update</a><br/>
+                    </td>
+                </tr>
+            {% endfor %}
         </table>
+
+        <!--Team Table-->
         <table>
             <tr>
                 <th>Team ID</th>
                 <th>Teams Added</th>
                 <th>Action</th>
             </tr>
-            {% for team in get_teams%}
+            {% for team in get_team %}
                 <tr>
-                    <td> {{ team.team_id}} </td>
+                    <td> {{ team.id}} </td>
                     <td> {{ team.team_name}} </td>
                     <td>
-                        <a href="/delete/{{team.team_id}}">Delete</a><br/>
-                        <a href="/update/{{team.team_id}}">Update</a><br/>
+                        <a href="/delete_team/{{team.id}}">Delete</a><br/>
+                        <a href="/update_team/{{team.id}}">Update</a><br/>
                     </td>
                 </tr>
             {% endfor %}

@@ -10,7 +10,7 @@
 </div>
 
 <div class = "content" style="margin-left: 500px;">
-    <form action = "{{ url_for('update', team_id=update_team.team_id) }}" method = "POST">
+    <form action = "{{ url_for('update_team_fun', id=update_team.id) }}" method = "POST">
         <label for="team_name">Team Name:</label>
         <input type="text" name="team_name" id="team_name" value="{{ update_team.team_name }}" required>
         <button type="submit" value="Update">Update Team</button>    
