@@ -64,6 +64,17 @@ def process_form1():
         start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
         end_date = datetime.strptime(request.form['end_date'],'%Y-%m-%d')
 
+        # Validate number_of_teams based on the series
+        n = 10
+        valid_team_counts = [2 * 2**(i-1) for i in range(1, n+1)]
+
+        if number_of_teams not in valid_team_counts:
+            return f"For the single elimination, the number of teams must be one of the following: {valid_team_counts}. Please choose a valid number."
+        
+        # Validation: Check if end_date is greater than start_date
+        if end_date < start_date:
+            return "End date must be ahead of start date or the same. Please correct the dates."
+
         add_tournament = Tournament(
             tournament_name=tournament_name, 
             number_of_teams=number_of_teams, 
