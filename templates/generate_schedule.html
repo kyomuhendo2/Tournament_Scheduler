@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block head %}
+
+{% endblock %}
+
+{% block body %}
+
+<div class="content" style="margin-left: 300px;">
+    <h1>Schedule for {{ tournament.tournament_name }} Generated</h1>
+</div>
+
+<div class="content" style="margin-left: 200px;">
+  <table style="width:800px">
+    <tr>
+      <th>Round</th>
+      <th>First Team</th>
+      <th>Second Team</th>
+      <th>Winner Status</th>
+    </tr> 
+    {% for match in schedule %}   
+    <tr>
+      <td>Round {{ match.round_number }}:</td>
+      <td>Team 1: {{ teams[match.team1_id - 1].team_name if match.team1_id and match.team1_id <= teams|length else 'N/A' }}</td>
+      <td>Team 2: {{ teams[match.team2_id - 1].team_name if match.team2_id and match.team2_id <= teams|length else 'N/A' }}</td>
+      <td>Winner: {{ teams[match.winner_id - 1].team_name if match.winner_id and match.winner_id <= teams|length else 'Not determined yet' }}</td>
+    </tr>
+    {% endfor %}
+  
+  </table>
+</div>
+
+<div class="content" style="margin-left: 500px;">
+  <a href="{{ url_for('index') }}">Go back to home</a>
+</div>
+ 
+{% endblock %}

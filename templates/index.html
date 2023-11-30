@@ -22,33 +22,60 @@
             <label>End Date :</label><input type="date" name = "end_date" id = "end_date"> <br/>
             <button type="submit" value="Add">Create Tournament</button>
         </form>
-
-        <form action="{{url_for('process_form2')}}" method = "POST">
-
+        
+        
+        <form action="{{url_for('process_form2')}}" method = "POST">            
+            <label for="tournament_id">Select Tournament:</label>
+            <select  style="width: 300px; height: 35px;" name="tournament_id" required>
+            {% for tournament in get_tournament %}
+                <option value="{{ tournament.id }}|{{ tournament.number_of_teams }}">{{ tournament.tournament_name }}</option>
+            {% endfor %}
+            </select> <br/><br/><br/>
             <input type="text" name = "team_name" id = "team_name" placeholder="Enter the name of the team to add">
             <button type="submit" value="Add">Add Teams</button>
-            <label for="tournament_id">Select Tournament:</label>
-            <select name="tournament_id" required>
-            {% for tournament in get_tournament %}
-                <option style="width: 300px; height: 50px;" value="{{ tournament.id }}">{{ tournament.tournament_name }}</option>
-            {% endfor %}
-            </select>
-            <!--{% if get_tournament %}
-                <p>Number of tournaments: {{ get_tournament|length }}</p>
-            {% for tournament in get_tournament %}
-                <p>Tournament: {{ tournament.tournament_name }}</p>
-            {% endfor %}
-            {% else %}
-                <p>No tournaments available</p>
-            {% endif %}-->
         </form>
     </div>
 
     <div class = "result">
-        <form>
-            <button>Create Schedule</button>
+        <form action="{{url_for('generate_schedule')}}" method = "POST">          
+            <label for="tournament_id">Select Tournament:</label>
+                    
+            <select  style="width: 300px; height: 35px;" name="tournament_id" required>
+            {% for tournament in get_tournament %} 
+                <option id="tournament_{{ tournament.id }}" value="{{ tournament.id }}|{{ tournament.number_of_teams }}">{{ tournament.tournament_name }}</option>
+            {% endfor %}
+            </select> 
+            <!--
+            <br/><br/> 
+            <label for="number_of_teams">Number of Teams:</label>
+            <input type="number" name="number_of_teams" id="number_of_teams" value="{% if get_tournament %}{{ get_tournament[0].number_of_teams }}{% endif %}">
+            -->
+            <br/><br/> 
+            <button type="submit" value="Add">Generate Schedule</button>
         </form>
-        <!--Tournament Table-->
+
+         <!-- Add JavaScript to dynamically update the number_of_teams input -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var tournamentDropdown = document.getElementById('tournament_id');
+                var numberOfTeamsInput = document.getElementById('number_of_teams');
+
+                // Set default values when the page loads
+                var defaultOption = tournamentDropdown.options[tournamentDropdown.selectedIndex];
+                var defaultNumberOfTeams = defaultOption.value.split('|')[1];
+
+                tournamentDropdown.addEventListener('change', function() {
+                    var selectedOption = tournamentDropdown.options[tournamentDropdown.selectedIndex];
+                    var numberOfTeams = selectedOption.value.split('|')[1];
+
+                    // Update the input field with the value
+                    numberOfTeamsInput.value = numberOfTeams;
+                });
+
+                // Set default value when the page loads
+                numberOfTeamsInput.value = defaultNumberOfTeams;
+            });
+        </script>
         <table style="border: 1px solid black; margin-bottom: 30px;">
             <tr>
                 <th>Tournament ID</th>
@@ -66,6 +93,7 @@
                     <td>{{ tournament.start_date }}</td>
                     <td>{{ tournament.end_date }}</td>
                     <td>
+                        <a href="{{ url_for('display_schedule', tournament_id=tournament.id) }}">View Schedule</a><br/>
                         <a href="/delete_tournament/{{ tournament.id }}">Delete</a><br/>
                         <a href="/update_tournament/{{ tournament.id }}">Update</a><br/>
                     </td>
@@ -85,7 +113,7 @@
                     <td> {{ team.id}} </td>
                     <td> {{ team.team_name}} </td>
                     <td>
-                        <a href="/delete_team/{{team.id}}">Delete</a><br/>
+                        <!--<a href="/delete_team/{{team.id}}">Delete</a><br/>-->
                         <a href="/update_team/{{team.id}}">Update</a><br/>
                     </td>
                 </tr>
