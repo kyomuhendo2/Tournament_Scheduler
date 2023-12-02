@@ -1,12 +1,14 @@
 import os
+#print("Current working directory:", os.getcwd())
 from flask import Flask, render_template, url_for, request, redirect, session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import aliased
-from datetime import datetime
+from datetime import datetime, timedelta
 from flask_migrate import Migrate
 from math import log2
 from sqlalchemy.orm import joinedload
 import random
+#import pdb; pdb.set_trace()
 
 app = Flask(__name__)
 
@@ -17,6 +19,7 @@ current_directory = os.path.abspath(os.path.dirname(__file__))
 db_file_path = os.path.join(current_directory, 'schedule.db')
 
 #app configuration
+#app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///schedule.db'
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + db_file_path
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 #initializing the database
@@ -31,8 +34,8 @@ class Tournament(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     tournament_name = db.Column(db.String(200), nullable=False)
     number_of_teams = db.Column(db.Integer, nullable=False)
-    start_date = db.Column(db.DateTime)
-    end_date = db.Column(db.DateTime)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
     teams = db.relationship('Team', backref='tournament', lazy=True)
 
 # Team model
@@ -52,27 +55,149 @@ class Match(db.Model):
     team1_id = db.Column(db.Integer, db.ForeignKey('team.id'))
     team2_id = db.Column(db.Integer, db.ForeignKey('team.id'))
     winner_id = db.Column(db.Integer, db.ForeignKey('team.id'))
-    match_date = db.Column(db.DateTime)
-
+    match_date = db.Column(db.Date)
+    bye_team_id = db.Column(db.Integer, db.ForeignKey('team.id'))
+    
+#define the relationsships in the match model
     team1 = db.relationship('Team', foreign_keys=[team1_id], backref='team1_match', lazy=True)
     team2 = db.relationship('Team', foreign_keys=[team2_id], backref='team2_match', lazy=True)
     winner = db.relationship('Team', foreign_keys=[winner_id], backref='winner_match', lazy=True)
+    bye_team = db.relationship('Team', foreign_keys=[bye_team_id], backref='bye_match', lazy=True)
+#create schedule
 
-# Schedule generation logic
+#create tournament
+@app.route('/', methods = ['POST', 'GET'])
+
+def index():
+    
+    get_tournament = Tournament.query.order_by(Tournament.id).all()
+    print("get_tournament:", get_tournament)  # line for debugging
+    get_team = Team.query.order_by(Team.id).all()
+    # Fetch a specific tournament, for example, the first one
+    tournament = get_tournament[0] if get_tournament else None
+    #select_tournament = Tournament.query.order_by(Tournament.id).all()
+
+    #1
+    return render_template('index.html', get_tournament=get_tournament, get_team=get_team, tournament=tournament)
+    #return render_template('index.html', get_tournament=get_tournament, get_team=get_team, select_tournament=select_tournament)
+
+    #method 2
+    # Render the initial page with the forms
+    return render_template('index.html')
+
+#create tournament / process form 1
+@app.route('/process_form1', methods=['POST'])
+def process_form1():
+    if request.method == 'POST':
+        print("Received form data:", request.form)
+        tournament_name = request.form['tournament_name']
+        number_of_teams = int(request.form['number_of_teams'])      
+
+        # Remove the time portion from the date strings
+        #start_date_str = request.form['start_date'].split()[0]
+        #end_date_str = request.form['end_date'].split()[0]
+
+        start_date = datetime.strptime(request.form['start_date'], '%Y-%m-%d')
+        end_date = datetime.strptime(request.form['end_date'],'%Y-%m-%d')
+
+        # Print the received date strings
+        print("Received start_date string:", start_date)
+        print("Received end_date string:", end_date)
+
+        # Print the converted datetime objects
+        print("Converted start_date:", start_date)
+        print("Converted end_date:", end_date)
+
+        # Validate number_of_teams based on the series
+        n = 100
+        valid_team_counts = [2 * 2**(i-1) for i in range(1, n+1)]
+
+        if number_of_teams not in valid_team_counts:
+            return f"For the single elimination, the number of teams must be one of the following: {valid_team_counts}. Please choose a valid number."
+        
+        # Validation: Check if end_date is greater than start_date
+        if end_date < start_date:
+            return "End date must be ahead of start date or the same. Please correct the dates."
+
+        add_tournament = Tournament(
+            tournament_name=tournament_name, 
+            number_of_teams=number_of_teams, 
+            start_date=start_date, 
+            end_date=end_date
+        )
+
+        try:
+            db.session.add(add_tournament)
+            db.session.commit()
+
+             # Automatically add team names to the 'teams' table for this tournament
+            tournament_id = add_tournament.id
+            for i in range(1, number_of_teams + 1):
+                team_name = f"Team {i}"
+                add_team = Team(
+                    team_name=team_name,
+                    tournament_id=tournament_id
+                )
+                db.session.add(add_team)
+
+            #create schedule
+
+            create_single_elimination_schedule(tournament_id, number_of_teams)
+
+            db.session.commit()
+            return redirect('/')
+
+        except Exception as e:
+            # Print or log the error for debugging purposes
+            print(f"Error: {e}")
+            return f'OOPs! There was an issue adding your task in form 1 {e}'
+    else:
+        get_tournament = Tournament.query.order_by(Tournament.start_date).all()
+        print("Number of tournaments:", len(get_tournament))  # line for debugging
+        for tournament in get_tournament:
+            print(tournament.id, tournament.tournament_name, tournament.number_of_teams, tournament.start_date, tournament.end_date)
+        return render_template('index.html', get_tournament=get_tournament)
+    
+# Create a single-elimination schedule
 def create_single_elimination_schedule(tournament_id, number_of_teams):
+    # Calculate the number of rounds needed
     num_rounds = int(log2(number_of_teams))
-    teams = Team.query.filter_by(tournament_id=tournament_id).order_by(Team.id).all()
+
+     # Handle odd number of teams
+    if number_of_teams % 2 == 1:
+        bye_team = Team.query.filter_by(tournament_id=tournament_id, team_name='Bye').first()
+        if not bye_team:
+            bye_team = Team(team_name='Bye', tournament_id=tournament_id)
+            db.session.add(bye_team)
+            db.session.commit()
+
+        # Add the bye team to the list of teams
+        teams = Team.query.filter_by(tournament_id=tournament_id).order_by(Team.id).all()
+        teams.append(bye_team)
+    else:
+        # If even number of teams, get teams directly from the database
+        teams = Team.query.filter_by(tournament_id=tournament_id).order_by(Team.id).all()
+
+        #teams = Team.query.filter_by(tournament_id=tournament_id).order_by(Team.id).all()
+
+    # Generate random dates for each round within the start date and end date limits
     start_date = Tournament.query.filter_by(id=tournament_id).first().start_date
     end_date = Tournament.query.filter_by(id=tournament_id).first().end_date
 
-    time_diff = end_date - start_date
-
+    # Create matches for each round
     for round_number in range(1, num_rounds + 1):
         matches_in_round = 2**(num_rounds - round_number)
+
+        for match_in_round in range(1, matches_in_round + 1):
+            match = Match(
+                tournament_id=tournament_id,
+                round_number=round_number,
+            )
+            
         round_start_date = (
-            start_date
-            if round_number == 1
-            else start_date + (end_date - start_date) * random.random()
+        start_date
+        if round_number == 1
+        else start_date + timedelta(days = (end_date - start_date).days * random.random())
         )
 
         for match_in_round in range(1, matches_in_round + 1):
@@ -80,7 +205,7 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
                 tournament_id=tournament_id,
                 round_number=round_number,
             )
-
+             # Assign teams to the match based on the round and match_in_round
             team1_index = (match_in_round - 1) * 2
             team2_index = (match_in_round - 1) * 2 + 1
 
@@ -89,7 +214,27 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
             if team2_index < len(teams):
                 match.team2_id = teams[team2_index].id
 
-            match_date = round_start_date + (end_date - round_start_date) * random.random()
+            # Handle bye team for odd number of teams
+            if number_of_teams % 2 == 1 and team2_index >= len(teams):
+                match.bye_team_id = teams[-1].id
+
+            """existing_match = (
+                Match.query.filter_by(tournament_id=tournament_id, round_number=round_number - 1)
+                .filter((Match.team1_id == match.team1_id) & (Match.team2_id == match.team2_id))
+                .first()
+            )
+
+            if existing_match:
+                # If the match already exists in a previous round, skip this match
+                print(f"Match between {teams[team1_index].team_name} and {teams[team2_index].team_name} already exists in round {round_number - 1}. Skipping this match.")
+                continue"""
+            
+	        # Assign a random date within the start date and end date limits for the current round
+            #match_date = round_start_date + (end_date - round_start_date) * random.random()
+            #match.match_date = match_date
+
+            round_start_date = start_date + timedelta(days=(end_date - start_date).days * random.random())
+            match_date = round_start_date + timedelta(days=(end_date - round_start_date).days * random.random())
             match.match_date = match_date
 
             db.session.add(match)
@@ -97,9 +242,10 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
     db.session.commit()
 
 # New route for generating schedule
-@app.route('/generate_schedule', methods=['GET', 'POST'])
-def generate_schedule():
+@app.route('/generate_schedule/<tournament_id>', methods=['GET', 'POST'])
+def generate_schedule(tournament_id):
     #select_tournament = Tournament.query.get_or_404(id)
+    tournament = Tournament.query.get_or_404(tournament_id)
     try:
         if request.method == 'POST':
             print(f"Received form data: {request.form}")
@@ -123,10 +269,10 @@ def generate_schedule():
                 return render_template('error.html', error_message="Invalid request method")
     except Exception as e:
         print(f"Error: {e}")
-        return render_template('generate_schedule.html', error_message=str(e))
+        return render_template('generate_schedule.html', tournament_id=tournament_id, tournament = tournament, error_message=str(e))
 
     # Default return statement (you can modify this)
-    return render_template('generate_schedule.html', error_message="Invalid request method")
+    return render_template('generate_schedule.html', tournament_id=tournament_id,error_message="Invalid request method")
 
 # Route to display the generated schedule
 @app.route('/display_schedule/<int:tournament_id>')
@@ -211,6 +357,25 @@ def delete_tournament(id):
          # Print or log the error for debugging purposes
         print(f"Error: {e}")
         return f'OOPs! There was an issue updating your task {e}'
+    
+
+@app.route('/clear_matches/<int:tournament_id>', methods=['GET', 'POST'])
+def clear_matches(tournament_id):
+    tournament = Tournament.query.get_or_404(tournament_id)
+    
+    if request.method == 'POST':
+        try:
+            # Delete all matches for the specified tournament
+            Match.query.filter_by(tournament_id=tournament_id).delete()
+            db.session.commit()
+            return redirect(url_for('display_schedule', tournament_id=tournament_id))
+        except Exception as e:
+            # Handle the exception (log, display an error message, etc.)
+            print(f"Error: {e}")
+            return render_template('error.html', error_message="Error clearing matches.")
+    else:
+        # Render the confirmation page
+        return render_template('clear_matches.html', tournament=tournament)
 
 @app.route('/delete_team/<int:id>')
 def delete_team(id):
@@ -261,12 +426,9 @@ def update_team_fun(id):
     else:
         return render_template('updateteam.html', update_team=update_team)
 
-
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(debug = True)
 
 # Create tables
-with app.app_context():
-    db.create_all()
-
-
+    with app.app_context():
+        db.create_all()

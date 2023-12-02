@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    
+{% endblock %}
+
+{% block body %}
+
+<div class="content" style="margin-left: 300px;">
+    <h2>Clear Matches Confirmation</h2>
+</div>
+<div class="content" style="margin-left: 300px;">
+    <p>Are you sure you want to clear all matches for this tournament?</p>
+</div>
+<div class="content" style="margin-left: 300px;">
+    <form method="post" action="{{ url_for('clear_matches', tournament_id=tournament.id) }}">
+        <button type="submit">Yes, Clear Matches</button>
+    </form>
+</div><br/><br/>
+
+<div class="content" style="margin-left: 400px;">
+    <a href="{{ url_for('index') }}">Cancel</a>
+</div>
+
+{% endblock %}

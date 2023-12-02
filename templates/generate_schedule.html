@@ -1,15 +1,31 @@
 {% extends 'base.html' %}
 
 {% block head %}
+<style>
+  /* Add this style block to define the hover effect */
+  .clear-matches-link {
+      color: rgb(246, 134, 134);
+      transition: color 0.3s ease; /* Add a smooth transition effect */
+  }
 
+  .clear-matches-link:hover {
+      color: blue;
+  }
+</style>
 {% endblock %}
 
 {% block body %}
 
 <div class="content" style="margin-left: 300px;">
-    <h1>Schedule for {{ tournament.tournament_name }} Generated</h1>
+  {% if tournament %}
+  <h1>Schedule for {{ tournament.tournament_name }} Generated</h1>
+  {% else %}
+  <p>No tournament data available.</p>
+  {% endif %}
 </div>
-
+<div class="content" style="margin-left: 500px;">
+  <a class="clear-matches-link" href="{{ url_for('clear_matches', tournament_id=tournament.id) }}">Clear Table before the next schedule</a>
+</div><br/><br/>
 <div class="content" style="margin-left: 200px;">
   <table style="width:800px">
     <tr>

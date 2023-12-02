@@ -37,7 +37,7 @@
     </div>
 
     <div class = "result">
-        <form action="{{url_for('generate_schedule')}}" method = "POST">          
+        <form action="{{url_for('generate_schedule', tournament_id=tournament.id)}}" method = "POST">          
             <label for="tournament_id">Select Tournament:</label>
                     
             <select  style="width: 300px; height: 35px;" name="tournament_id" required>
