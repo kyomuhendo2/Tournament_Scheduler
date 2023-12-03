@@ -43,7 +43,7 @@
       <td>Team 1: {{ teams[match.team1_id - 1].team_name if match.team1_id and match.team1_id <= teams|length else 'N/A' }}</td>
       <td>vs</td>
       <td>Team 2: {{ teams[match.team2_id - 1].team_name if match.team2_id and match.team2_id <= teams|length else 'N/A' }}</td>
-      <td>Winner: {{ teams[match.winner_id - 1].team_name if match.winner_id and match.winner_id <= teams|length else 'Not determined yet' }}</td>
+      <td>Winner: {{ 'Winner ' ~ match.id if match.winner_id and match.winner_id <= teams|length else 'Not determined yet' }}</td>
     </tr>
     {% endfor %}
   

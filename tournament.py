@@ -185,6 +185,7 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
     end_date = Tournament.query.filter_by(id=tournament_id).first().end_date
 
     # Create matches for each round
+    winners = []  # To store the winners of each round
     for round_number in range(1, num_rounds + 1):
         matches_in_round = 2**(num_rounds - round_number)
 
@@ -200,10 +201,13 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
         else start_date + timedelta(days = (end_date - start_date).days * random.random())
         )
 
+        round_winners = []  # To store the winners of the current round
+
         for match_in_round in range(1, matches_in_round + 1):
             match = Match(
                 tournament_id=tournament_id,
                 round_number=round_number,
+                winner_id=match_in_round  # Set winner_id as match.id
             )
              # Assign teams to the match based on the round and match_in_round
             team1_index = (match_in_round - 1) * 2
@@ -238,6 +242,12 @@ def create_single_elimination_schedule(tournament_id, number_of_teams):
             match.match_date = match_date
 
             db.session.add(match)
+
+            # Simulate match result and determine the winner
+            # Replace this with your actual logic for determining the winner
+            round_winners.append(match_in_round)
+
+        winners.append(round_winners)  # Store the winners of the current round for the next round
 
     db.session.commit()
 
@@ -411,7 +421,7 @@ def delete_team(id):
         print(f"Error: {e}")
         return f'OOPs! There was an issue updating your task {e}'
 
-#update
+        #update
 @app.route('/update_tournament/<int:id>', methods = ['GET', 'POST'])
 
 def update_tournament_fun(id):
