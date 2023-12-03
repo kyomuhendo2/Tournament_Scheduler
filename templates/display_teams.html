@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block head %}
+    
+{% endblock %}
+
+{% block body %}
+
+<div class="content" style="margin-left: 300px;">
+    {% if tournament %}
+    <h1>Teams in {{ tournament.tournament_name }} Tournament</h1>
+    {% else %}
+    <p>No tournament data available.</p>
+    {% endif %}
+</div>
+<div class="content" style="margin-left: 300px;">
+    <!--Add this code to dynamically display teams based on the selected tournament
+    <form method="post" action="/display_teams">
+        <label for="teams" style="color: green; font-weight: bolder;">Select the tournament to see the list of teams present:</label>
+        <select name="tournament_id" id="tournament_id">
+            {% for t in get_tournament %}
+                <option value="{{ t.id }}" {% if t.id == tournament.id %}selected{% endif %}>{{ t.tournament_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Submit</button>
+    </form>
+
+    Display teams only if there are teams for the selected tournament
+    Team Table-->
+            
+    <table>
+        <tr>
+            <th>Team ID</th>
+            <th>Teams Added</th>
+            <th>Action</th>
+        </tr>
+        {% for team in get_team %}
+            <tr>
+                <td> {{ team.id}} </td>
+                <td> {{ team.team_name}} </td>
+                <td>
+                    <a href="/delete_team/{{team.id}}">Delete</a><br/>
+                    <a href="/update_team/{{team.id}}">Update</a><br/>
+                </td>
+            </tr>
+        {% endfor %}
+    </table>
+</div>
+
+{% endblock %}

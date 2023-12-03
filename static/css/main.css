@@ -2,6 +2,7 @@ body{
     justify-content: center;
     align-items: center;
     font-family: 'Tahoma';
+    font-size: medium;
 }
 .content{
     
@@ -13,7 +14,7 @@ body{
         box-sizing: border-box;
 }
 .result {
-        width: 700px;/* Distribute available space equally between entry and result */
+        width: 900px;/* Distribute available space equally between entry and result */
         padding: 20px;
         margin: 10px;
         box-sizing: border-box;

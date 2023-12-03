@@ -343,7 +343,28 @@ def process_form2():
             get_team=get_team, 
             get_tournament=get_tournament
         )
-    
+#view teams in a selected tournament
+@app.route('/display_teams/<int:tournament_id>', methods=['GET', 'POST'])
+def display_teams(tournament_id): 
+    # Use tournament_id directly from the URL parameters
+    selected_tournament = tournament_id
+
+    # Query teams for the selected tournament
+    teams = Team.query.filter_by(tournament_id=selected_tournament).order_by(Team.id).all()
+    if request.method == 'POST':
+        print(f"Received form data: {request.form}")
+
+
+        # Retrieve the selected tournament for rendering
+        selected_tournament = Tournament.query.get(selected_tournament)
+
+        # Render the index.html template with the selected tournament and teams
+        return render_template('index.html', selected_tournament=selected_tournament, teams=teams)
+
+    # If it's a GET request, display the home page
+    return render_template('display_teams.html', selected_tournament=selected_tournament, get_team=teams)
+
+
 #delete
 @app.route('/delete_tournament/<int:id>')
 def delete_tournament(id):
